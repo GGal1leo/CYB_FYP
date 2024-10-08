@@ -5,7 +5,7 @@ import os
 import sys
 
 
-ai_api = "AIzaSyC_OQkjAiKUZQeMSLDYR7mxbxYwvfc4X_A"
+ai_api = "[REDACTED]"
 genai.configure(api_key=ai_api)
 model = genai.GenerativeModel("gemini-1.5-flash")
 # curl -X POST https://threatfox-api.abuse.ch/api/v1/ -d '{ "query": "search_ioc", "search_term": "139.180.203.104" }'
