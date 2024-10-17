@@ -5,9 +5,29 @@ import os
 import sys
 
 
-ai_api = "[REDACTED]"
+ai_api = os.getenv("AI_API")
+
+safety_settings = [
+        {
+            "category": "HARM_CATEGORY_HARASSMENT",
+            "threshold": "BLOCK_NONE"
+        },
+        {
+            "category": "HARM_CATEGORY_HATE_SPEECH",
+            "threshold": "BLOCK_NONE"
+        },
+        {
+            "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            "threshold": "BLOCK_NONE"
+        },
+        {
+            "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+            "threshold": "BLOCK_NONE"
+        }, 
+]
+
 genai.configure(api_key=ai_api)
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = genai.GenerativeModel("gemini-1.5-flash", safety_settings=safety_settings)
 # curl -X POST https://threatfox-api.abuse.ch/api/v1/ -d '{ "query": "search_ioc", "search_term": "139.180.203.104" }'
 def search_ioc(ioc):
     url = "https://threatfox-api.abuse.ch/api/v1/"
@@ -29,12 +49,12 @@ def main():
     from pygments import lexers, formatters
     print(pygments.highlight(json.dumps(result, indent=4, sort_keys=True), lexers.JsonLexer(), formatters.TerminalFormatter()))
     #print(json.dumps(result, indent=4, sort_keys=True))
-    response = model.generate_content(f"Summarise this data about an IOC into a pretty report: {json.dumps(result, indent=4, sort_keys=True)} use ** symbols to highlight the start of the important parts and ## symbols to highlight the end of the important parts")
+    response = model.generate_content(f"Summarise this data about an IOC into a pretty report: {json.dumps(result, indent=4, sort_keys=True)} use html tags to format the output")
     # prettify the ai response with colors
     #print(pygments.highlight(response, lexers.JsonLexer(), formatters.TerminalFormatter()))
     # color the elements between ** symbols
-    response = response.text.replace("**", "\033[1;31m").replace("##", "\033[0m")
-    print(response)
+    with open("report.html", "w") as f:
+        f.write(response.text)
 
 
 if __name__ == "__main__":
