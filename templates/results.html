@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">Analysis Results for {{ report.ioc }}</h2>
+                    
+                    <!-- AI Analysis -->
+                    <div class="mt-4">
+                        <h3>Comprehensive Analysis</h3>
+                        <div class="card">
+                            <div class="card-body">
+                                <pre class="mb-0">{{ report.ai_analysis.analysis }}</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Raw ThreatFox Data -->
+                    <div class="mt-4">
+                        <h3>Threat Intelligence Data</h3>
+                        <div class="card">
+                            <div class="card-body">
+                                <pre class="mb-0">{{ report.threatfox_data | tojson(indent=2) }}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Back to Analysis Form -->
+            <div class="text-center mb-4">
+                <a href="/" class="btn btn-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Analyze Another IOC
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

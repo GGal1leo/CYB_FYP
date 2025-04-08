@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero-section">
+    <div class="container text-center">
+        <h1 class="display-4 mb-4">Cyber Incident Monitoring Tool</h1>
+        <p class="lead mb-5">Advanced threat detection and analysis powered by AI</p>
+    </div>
+</section>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">Analyze IOC</h2>
+                    <form action="/analyze" method="post">
+                        <div class="mb-3">
+                            <label for="ioc" class="form-label">Enter IOC (IP, URL, Hash, etc.)</label>
+                            <input type="text" class="form-control" id="ioc" name="ioc" required 
+                                   placeholder="e.g., 192.168.1.1 or example.com">
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-search me-2"></i>Analyze
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-robot fa-3x mb-3 text-primary"></i>
+                    <h3 class="card-title">AI-Powered Analysis</h3>
+                    <p class="card-text">Leverages Gemini AI for intelligent IOC identification and threat analysis.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-shield-alt fa-3x mb-3 text-primary"></i>
+                    <h3 class="card-title">Threat Intelligence</h3>
+                    <p class="card-text">Enriches IOC data using ThreatFox API for comprehensive threat context.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-project-diagram fa-3x mb-3 text-primary"></i>
+                    <h3 class="card-title">MITRE ATT&CK</h3>
+                    <p class="card-text">Maps threats to the MITRE ATT&CK framework for structured analysis.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

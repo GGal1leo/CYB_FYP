@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Incident Monitoring Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 100px 0;
+        }
+        
+        .feature-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        
+        .tech-stack {
+            background: #f8f9fa;
+            padding: 50px 0;
+        }
+        
+        .tech-icon {
+            font-size: 3rem;
+            margin: 20px;
+            color: var(--primary-color);
+        }
+
+        .author-table {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            border-collapse: separate;
+            border-spacing: 0 15px;
+        }
+
+        .author-table th {
+            text-align: right;
+            padding-right: 20px;
+            color: var(--primary-color);
+            font-weight: 600;
+            width: 30%;
+        }
+
+        .author-table td {
+            text-align: left;
+            padding-left: 20px;
+        }
+
+        .author-bio {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">Cyber Monitor</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#tech">Technology</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container text-center">
+            <h1 class="display-4 mb-4">Cyber Incident Monitoring Tool</h1>
+            <p class="lead mb-5">Advanced threat detection and analysis powered by AI</p>
+            <a href="#features" class="btn btn-light btn-lg">Learn More</a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">Key Features</h2>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <div class="icon-circle">
+                                <i class="fas fa-robot text-white fa-2x"></i>
+                            </div>
+                            <h3 class="card-title">AI-Powered Analysis</h3>
+                            <p class="card-text">Leverages Gemini AI for intelligent IOC identification and threat analysis.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <div class="icon-circle">
+                                <i class="fas fa-shield-alt text-white fa-2x"></i>
+                            </div>
+                            <h3 class="card-title">Threat Intelligence</h3>
+                            <p class="card-text">Enriches IOC data using ThreatFox API for comprehensive threat context.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <div class="icon-circle">
+                                <i class="fas fa-chart-line text-white fa-2x"></i>
+                            </div>
+                            <h3 class="card-title">MITRE ATT&CK Integration</h3>
+                            <p class="card-text">Maps threats to the MITRE ATT&CK framework for structured analysis.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technology Stack -->
+    <section id="tech" class="tech-stack">
+        <div class="container text-center">
+            <h2 class="mb-5">Technology Stack</h2>
+            <div class="row">
+                <div class="col-md-3">
+                    <i class="fab fa-python tech-icon"></i>
+                    <h4>Python</h4>
+                </div>
+                <div class="col-md-3">
+                    <i class="fas fa-brain tech-icon"></i>
+                    <h4>Gemini AI</h4>
+                </div>
+                <div class="col-md-3">
+                    <i class="fas fa-database tech-icon"></i>
+                    <h4>ThreatFox API</h4>
+                </div>
+                <div class="col-md-3">
+                    <i class="fas fa-project-diagram tech-icon"></i>
+                    <h4>MITRE ATT&CK</h4>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">About the Project</h2>
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <p class="lead text-center">
+                        This Cyber Incident Monitoring Tool revolutionizes threat detection and analysis by combining 
+                        artificial intelligence with comprehensive threat intelligence. It provides organizations with 
+                        real-time insights into potential security threats, enabling proactive defense against evolving 
+                        cyber threats.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Author Section -->
+    <section id="author" class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-5">About the Author</h2>
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <table class="author-table">
+                        <tr>
+                            <th>Name:</th>
+                            <td>Daniel Vetrila</td>
+                        </tr>
+                        <tr>
+                            <th>Student ID:</th>
+                            <td>C00271021</td>
+                        </tr>
+                        <tr>
+                            <th>Supervisor:</th>
+                            <td>Christopher Staff</td>
+                        </tr>
+                        <tr>
+                            <th>Expertise:</th>
+                            <td>Cybersecurity, AI, Software Development</td>
+                        </tr>
+                    </table>
+                    <div class="author-bio text-center">
+                        <p class="lead">
+                            A passionate cybersecurity student and developer. This project represents a culmination of expertise in 
+                            cybersecurity, artificial intelligence, and software development.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container text-center">
+            <p>&copy; 2025 Cyber Incident Monitoring Tool. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 
