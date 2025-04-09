@@ -62,9 +62,12 @@ class CyberMonitor:
         for ioc in article['potential_iocs']:
             try:
                 report = self.ioc_analyzer.generate_report(ioc)
+                # Get the HTML formatted report
+                html_report = self.ioc_analyzer.display_report(report)
                 analysis_results.append({
                     'ioc': ioc,
-                    'analysis': report['ai_analysis']['analysis'],
+                    'html_analysis': html_report,
+                    'raw_analysis': report['ai_analysis']['analysis'],
                     'threat_data': report['threatfox_data']
                 })
             except Exception as e:
@@ -104,7 +107,7 @@ class CyberMonitor:
                                     print(f"Error analyzing {result['ioc']}: {result['error']}")
                                 else:
                                     print(f"\nAnalysis for {result['ioc']}:")
-                                    print(result['analysis'])
+                                    print(result['html_analysis'])
                         
                         self.seen_articles.add(article_key)
                         print("\n" + "="*50)

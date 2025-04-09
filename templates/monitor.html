@@ -72,11 +72,23 @@
                         <div class="input-group">
                             <input type="text" id="iocInput" class="form-control" 
                                    placeholder="Enter IOC (IP, URL, Hash)">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" id="analyzeButton" class="btn btn-primary">
                                 <i class="fas fa-search me-2"></i>Analyze
                             </button>
                         </div>
                     </form>
+                    <div id="loadingSpinner" class="text-center d-none">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="progress mb-3" style="height: 20px;">
+                            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div id="loadingMessages" class="loading-messages">
+                            <p id="loadingMessage" class="mb-0">Initializing cyber analysis...</p>
+                        </div>
+                    </div>
                     <div id="iocResults" class="mt-4">
                         <!-- Analysis results will be displayed here -->
                     </div>
@@ -94,6 +106,8 @@
     const iocInput = document.getElementById('iocInput');
     const iocResults = document.getElementById('iocResults');
     const connectionStatus = document.getElementById('connectionStatus');
+    const analyzeButton = document.getElementById('analyzeButton');
+    const loadingSpinner = document.getElementById('loadingSpinner');
 
     function connectWebSocket() {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -160,15 +174,53 @@
             ${analysis ? `
                 <div class="mt-2">
                     <strong><i class="fas fa-chart-bar me-1"></i>Analysis:</strong>
-                    <pre class="bg-light p-2 rounded">${analysis.ioc_analysis.map(a => 
-                        a.error ? `Error analyzing ${a.ioc}: ${a.error}` : 
-                        `Analysis for ${a.ioc}:\n${a.analysis}`
-                    ).join('\n\n')}</pre>
+                    ${analysis.ioc_analysis.map(result => 
+                        result.error ? 
+                            `<div class="alert alert-danger mt-2">Error analyzing ${result.ioc}: ${result.error}</div>` :
+                            result.html_analysis
+                    ).join('')}
                 </div>
             ` : ''}
         `;
         
         liveFeed.insertBefore(articleElement, liveFeed.firstChild);
+    }
+
+    const loadingMessages = [
+        "Initializing cyber analysis...",
+        "Consulting with the AI overlords...",
+        "Decrypting threat patterns...",
+        "Scanning the dark web...",
+        "Brewing some cyber coffee...",
+        "Calculating threat vectors...",
+        "Consulting the MITRE ATT&CK matrix...",
+        "Analyzing potential impacts...",
+        "Preparing final report...",
+        "Almost there...",
+        "Just a few more bits..."
+    ];
+
+    function updateLoadingProgress(progress) {
+        const progressBar = document.getElementById('progressBar');
+        const loadingMessage = document.getElementById('loadingMessage');
+        
+        // Update progress bar
+        progressBar.style.width = `${progress}%`;
+        
+        // Calculate which message to show based on progress
+        const messageIndex = Math.min(
+            Math.floor(progress / (100 / (loadingMessages.length - 1))),
+            loadingMessages.length - 1
+        );
+        
+        // Update message with smooth transition
+        loadingMessage.style.transition = 'opacity 0.3s ease-in-out';
+        loadingMessage.style.opacity = '0';
+        
+        setTimeout(() => {
+            loadingMessage.textContent = loadingMessages[messageIndex];
+            loadingMessage.style.opacity = '1';
+        }, 300);
     }
 
     // Handle manual IOC analysis
@@ -178,6 +230,23 @@
         
         if (ioc) {
             try {
+                // Show loading spinner and disable button
+                loadingSpinner.classList.remove('d-none');
+                analyzeButton.disabled = true;
+                analyzeButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
+                iocResults.innerHTML = ''; // Clear previous results
+                
+                // Start progress simulation
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += 5;
+                    if (progress <= 100) {
+                        updateLoadingProgress(progress);
+                    } else {
+                        clearInterval(progressInterval);
+                    }
+                }, 500);
+                
                 const response = await fetch('/analyze', {
                     method: 'POST',
                     headers: {
@@ -187,22 +256,52 @@
                 });
                 
                 const data = await response.json();
-                iocResults.innerHTML = `
-                    <div class="card">
-                        <div class="card-body">
-                            <h5><i class="fas fa-chart-pie me-2"></i>Analysis Results for ${ioc}</h5>
-                            <pre class="bg-light p-2 rounded">${data.analysis}</pre>
+                if (data.error) {
+                    iocResults.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>${data.error}
                         </div>
-                    </div>
-                `;
+                    `;
+                } else {
+                    iocResults.innerHTML = data.html;
+                }
             } catch (error) {
                 iocResults.innerHTML = `
                     <div class="alert alert-danger">
                         <i class="fas fa-exclamation-circle me-2"></i>Error analyzing IOC: ${error.message}
                     </div>
                 `;
+            } finally {
+                // Hide loading spinner and re-enable button
+                loadingSpinner.classList.add('d-none');
+                analyzeButton.disabled = false;
+                analyzeButton.innerHTML = '<i class="fas fa-search me-2"></i>Analyze';
             }
         }
     });
 </script>
+
+<!-- Add this to your existing style section -->
+<style>
+    .loading-messages {
+        min-height: 24px;
+        margin-bottom: 1rem;
+    }
+    
+    .loading-message {
+        transition: opacity 0.3s ease-in-out;
+        opacity: 1;
+    }
+    
+    .progress {
+        background-color: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        background-color: #0d6efd;
+        transition: width 0.5s ease-in-out;
+    }
+</style>
 {% endblock %} 

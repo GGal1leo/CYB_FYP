@@ -120,13 +120,19 @@ async def analyze_ioc(request: Request):
                 content={"error": "No IOC provided"}
             )
         
-        # Analyze the IOC using generate_report instead of analyze_ioc
+        # Generate the report
         report = ioc_analyzer.generate_report(ioc)
         
+        # Get the HTML formatted report
+        html_report = ioc_analyzer.display_report(report)
+        
         return JSONResponse({
-            "ioc": ioc,
-            "analysis": report['ai_analysis']['analysis'],
-            "threat_data": report['threatfox_data']
+            "html": html_report,
+            "raw_data": {
+                "ioc": ioc,
+                "analysis": report['ai_analysis']['analysis'],
+                "threat_data": report['threatfox_data']
+            }
         })
     except Exception as e:
         return JSONResponse(
