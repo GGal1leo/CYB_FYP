@@ -28,7 +28,46 @@ class CyberMonitor:
         article_info = []
         for article in articles:
             title = article.find('a').text
-            link = article.find('a')['href']
+            # Get the redirect page URL first
+            redirect_url = article.find('a')['href']
+            
+            # Fetch the redirect page to get the real article URL
+            try:
+                redirect_response = requests.get(redirect_url, headers=self.headers)
+                redirect_soup = BeautifulSoup(redirect_response.text, 'html.parser')
+                
+                # Try different possible locations for the real URL
+                real_url = None
+                
+                # Try the retrieval message first
+                retrieval_msg = redirect_soup.find('div', class_='retrieval-msg')
+                if retrieval_msg and retrieval_msg.find('a'):
+                    real_url = retrieval_msg.find('a')['href']
+                
+                # If not found, try the clickthrough button
+                if not real_url:
+                    clickthrough = redirect_soup.find('div', class_='clickthrough-dec__button')
+                    if clickthrough and clickthrough.find('a'):
+                        real_url = clickthrough.find('a')['href']
+                
+                # If still not found, try to find any link in the page
+                if not real_url:
+                    all_links = redirect_soup.find_all('a')
+                    for link in all_links:
+                        href = link.get('href', '')
+                        if href and not href.startswith('javascript:') and not href.startswith('#'):
+                            real_url = href
+                            break
+                
+                # If we couldn't find a real URL, use the redirect URL
+                if not real_url:
+                    print(f"Could not find real article URL for: {title}")
+                    real_url = redirect_url
+                
+            except Exception as e:
+                print(f"Error getting real article URL for '{title}': {e}")
+                real_url = redirect_url  # Fallback to the redirect URL if we can't get the real one
+            
             timestamp = article.find('span', class_='article-publisher__timestamp')['data-timestamp']
             dt_object = datetime.datetime.fromtimestamp(int(timestamp))
             
@@ -37,7 +76,7 @@ class CyberMonitor:
             
             article_info.append({
                 'title': title,
-                'link': link,
+                'link': real_url,  # Use the real article URL
                 'time': dt_object,
                 'potential_iocs': potential_iocs
             })
@@ -59,6 +98,7 @@ class CyberMonitor:
     def analyze_article(self, article: Dict) -> Dict:
         """Analyze an article and its potential IOCs"""
         analysis_results = []
+        # Analyze any IOCs found in the article
         for ioc in article['potential_iocs']:
             try:
                 report = self.ioc_analyzer.generate_report(ioc)

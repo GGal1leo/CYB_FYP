@@ -149,41 +149,106 @@
     // Display an article in the live feed
     function displayArticle(data) {
         const article = data.article;
-        const analysis = data.analysis;
         
         const articleElement = document.createElement('div');
-        articleElement.className = 'list-group-item';
+        articleElement.className = 'card mb-4';
         articleElement.innerHTML = `
-            <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">${article.title}</h5>
-                <small>${new Date(article.time).toLocaleString()}</small>
+            <div class="card-body">
+                <h5 class="card-title">${article.title}</h5>
+                <p class="card-text">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>${new Date(article.time).toLocaleString()}
+                    </small>
+                </p>
+                <div class="d-flex gap-2">
+                    <a href="${article.link}" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-external-link-alt me-2"></i>Read Article
+                    </a>
+                    <button class="btn btn-info analyze-article" data-article-id="${article.title}">
+                        <i class="fas fa-search me-2"></i>Analyze
+                    </button>
+                </div>
+                <div id="analysis-${article.title.replace(/\s+/g, '-')}" class="mt-3 d-none">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 20px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="loading-messages">
+                        <p class="loading-message mb-0">Initializing cyber analysis...</p>
+                    </div>
+                </div>
             </div>
-            <p class="mb-1">
-                <a href="${article.link}" target="_blank" class="text-primary">
-                    <i class="fas fa-external-link-alt me-1"></i>Read more
-                </a>
-            </p>
-            ${article.potential_iocs.length > 0 ? `
-                <div class="mt-2">
-                    <strong><i class="fas fa-shield-alt me-1"></i>Potential IOCs:</strong>
-                    <ul class="mb-1">
-                        ${article.potential_iocs.map(ioc => `<li>${ioc}</li>`).join('')}
-                    </ul>
-                </div>
-            ` : ''}
-            ${analysis ? `
-                <div class="mt-2">
-                    <strong><i class="fas fa-chart-bar me-1"></i>Analysis:</strong>
-                    ${analysis.ioc_analysis.map(result => 
-                        result.error ? 
-                            `<div class="alert alert-danger mt-2">Error analyzing ${result.ioc}: ${result.error}</div>` :
-                            result.html_analysis
-                    ).join('')}
-                </div>
-            ` : ''}
         `;
         
         liveFeed.insertBefore(articleElement, liveFeed.firstChild);
+        
+        // Add click handler for the analyze button
+        const analyzeBtn = articleElement.querySelector('.analyze-article');
+        analyzeBtn.addEventListener('click', async function() {
+            const articleId = this.dataset.articleId;
+            const analysisDiv = document.getElementById(`analysis-${articleId.replace(/\s+/g, '-')}`);
+            const progressBar = analysisDiv.querySelector('.progress-bar');
+            const loadingMessage = analysisDiv.querySelector('.loading-message');
+            
+            // Show analysis div and disable button
+            analysisDiv.classList.remove('d-none');
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
+            
+            try {
+                // Start progress simulation
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += 5;
+                    if (progress <= 100) {
+                        progressBar.style.width = `${progress}%`;
+                        const messageIndex = Math.min(
+                            Math.floor(progress / (100 / (loadingMessages.length - 1))),
+                            loadingMessages.length - 1
+                        );
+                        loadingMessage.textContent = loadingMessages[messageIndex];
+                    } else {
+                        clearInterval(progressInterval);
+                    }
+                }, 500);
+                
+                // Send analysis request
+                const response = await fetch('/analyze_article', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        title: article.title,
+                        link: article.link,
+                        iocs: article.potential_iocs
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    analysisDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>${data.error}
+                        </div>
+                    `;
+                } else {
+                    analysisDiv.innerHTML = data.html;
+                }
+            } catch (error) {
+                analysisDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>Error analyzing article: ${error.message}
+                    </div>
+                `;
+            } finally {
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-search me-2"></i>Analyze';
+            }
+        });
     }
 
     const loadingMessages = [

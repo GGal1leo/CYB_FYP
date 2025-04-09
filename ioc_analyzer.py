@@ -270,6 +270,99 @@ class IOCAnalyzer:
         
         return "\n".join(output)
 
+    def analyze_article_content(self, content: str) -> Dict:
+        """Analyze article content using Gemini AI"""
+        prompt = f"""
+        Analyze this cybersecurity article and provide a structured analysis with the following sections:
+        1. Summary: [Brief overview of the article]
+        2. Key Threats: [List of main threats discussed]
+        3. Impact Assessment: [Potential impact of the threats]
+        4. Recommendations: [Suggested actions or mitigations]
+        5. Technical Details: [Any technical information worth noting]
+        
+        Article Content:
+        {content[:8000]}  # Limit content length to avoid token limits
+        """
+        
+        try:
+            response = self.model.generate_content(prompt)
+            # Split the response into sections
+            sections = {}
+            current_section = None
+            current_content = []
+            
+            for line in response.text.split('\n'):
+                line = line.strip()
+                if not line:
+                    continue
+                    
+                if line.startswith(('1.', '2.', '3.', '4.', '5.')):
+                    if current_section:
+                        sections[current_section] = ' '.join(current_content)
+                    current_section = line.split(':', 1)[0].strip()
+                    current_content = [line.split(':', 1)[1].strip()] if ':' in line else []
+                elif current_section:
+                    current_content.append(line)
+            
+            if current_section:
+                sections[current_section] = ' '.join(current_content)
+            
+            return {
+                "analysis": sections,
+                "html": self._format_article_analysis_html(sections)
+            }
+        except Exception as e:
+            print(f"Error analyzing article content: {e}")
+            return None
+
+    def _format_article_analysis_html(self, sections: Dict) -> str:
+        """Format the article analysis as HTML"""
+        html = []
+        html.append("<div class='article-analysis'>")
+        
+        for section_num, section_title in [
+            ("1.", "Summary"),
+            ("2.", "Key Threats"),
+            ("3.", "Impact Assessment"),
+            ("4.", "Recommendations"),
+            ("5.", "Technical Details")
+        ]:
+            if section_num in sections:
+                html.append(f"<div class='analysis-section'>")
+                html.append(f"<h3>{section_title}</h3>")
+                html.append(f"<p>{sections[section_num]}</p>")
+                html.append("</div>")
+        
+        html.append("</div>")
+        
+        # Add some basic CSS styling
+        html.append("""
+        <style>
+        .article-analysis {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .analysis-section {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .analysis-section h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        .analysis-section p {
+            margin-bottom: 0;
+            line-height: 1.6;
+        }
+        </style>
+        """)
+        
+        return "\n".join(html)
+
 if __name__ == "__main__":
     analyzer = IOCAnalyzer()
     ioc = input("Enter IOC to analyze: ")
