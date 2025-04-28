@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from stix2 import MemoryStore
 from stix2 import Filter
 import time
+from tqdm import tqdm
 
 # Load environment variables
 load_dotenv()
@@ -70,12 +71,22 @@ class IOCAnalyzer:
         
         # If cache doesn't exist, is too old, or is corrupted, download fresh data
         url = "https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json"
-        response = requests.get(url)
-        data = response.json()
+        response = requests.get(url, stream=True)
+        total_size = int(response.headers.get('content-length', 0))
         
-        # Save to cache file
-        with open(cache_file, 'w') as f:
-            json.dump(data, f)
+        with open(cache_file, 'wb') as f, tqdm(
+            desc="Fetching latest MITRE data",
+            total=total_size,
+            unit='iB',
+            unit_scale=True,
+            unit_divisor=1024,
+        ) as pbar:
+            for data in response.iter_content(chunk_size=1024):
+                size = f.write(data)
+                pbar.update(size)
+        
+        with open(cache_file, 'r') as f:
+            data = json.load(f)
         
         self.attack_data = MemoryStore(stix_data=data)
     
@@ -86,8 +97,42 @@ class IOCAnalyzer:
             "query": "search_ioc",
             "search_term": ioc
         }
-        response = requests.post(url, json=payload)
-        return response.json()
+        
+        max_retries = 3
+        retry_delay = 2  # seconds
+        
+        for attempt in range(max_retries):
+            try:
+                response = requests.post(url, json=payload, timeout=10)  # Add timeout
+                if response.status_code == 200:
+                    return response.json()
+                elif response.status_code == 499:
+                    print(f"Attempt {attempt + 1}/{max_retries}: Request cancelled, retrying...")
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    print(f"Attempt {attempt + 1}/{max_retries}: HTTP {response.status_code}, retrying...")
+                    time.sleep(retry_delay)
+                    continue
+            except requests.exceptions.RequestException as e:
+                print(f"Attempt {attempt + 1}/{max_retries}: Request failed: {str(e)}, retrying...")
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    # If all retries failed, return a default response
+                    return {
+                        "query_status": "error",
+                        "data": [],
+                        "error": f"Failed to fetch data after {max_retries} attempts: {str(e)}"
+                    }
+        
+        # If we get here, all retries failed
+        return {
+            "query_status": "error",
+            "data": [],
+            "error": f"Failed to fetch data after {max_retries} attempts"
+        }
     
     def map_to_mitre(self, ioc_data: Dict) -> List[Dict]:
         """Map IOC data to relevant MITRE ATT&CK techniques"""
@@ -206,7 +251,16 @@ class IOCAnalyzer:
         
         # Analysis sections
         analysis = report["ai_analysis"]["analysis"]
-        output.append("<div class='analysis-section'>")
+        threat_level = analysis.get('1. Threat Level', 'Not available').lower()
+        
+        # Determine color class based on threat level
+        color_class = 'low-risk'
+        if 'high' in threat_level or 'critical' in threat_level:
+            color_class = 'high-risk'
+        elif 'medium' in threat_level:
+            color_class = 'medium-risk'
+        
+        output.append(f"<div class='analysis-section {color_class}'>")
         output.append(f"<p><strong>Threat Level:</strong> {analysis.get('1. Threat Level', 'Not available')}</p>")
         output.append(f"<p><strong>Impact:</strong> {analysis.get('2. Impact', 'Not available')}</p>")
         output.append(f"<p><strong>Recommended Actions:</strong> {analysis.get('3. Recommended Actions', 'Not available')}</p>")
@@ -214,11 +268,11 @@ class IOCAnalyzer:
         output.append(f"<p><strong>Historical Context:</strong> {analysis.get('5. Historical Context', 'Not available')}</p>")
         output.append("</div>")
         
-        # MITRE ATT&CK techniques
+        # MITRE ATT&CK techniques (top 3 only)
         if report["ai_analysis"]["mitre_mapping"]:
             output.append("<div class='mitre-section'>")
-            output.append("<h3>MITRE ATT&CK Techniques</h3>")
-            for technique in report["ai_analysis"]["mitre_mapping"]:
+            output.append("<h3>Top 3 MITRE ATT&CK Techniques</h3>")
+            for technique in report["ai_analysis"]["mitre_mapping"][:3]:
                 tactics_str = ", ".join(technique['tactic']) if isinstance(technique['tactic'], list) else str(technique['tactic'])
                 output.append("<div class='technique'>")
                 output.append(f"<p><strong>{technique['name']}</strong> ({technique['id']})</p>")
@@ -239,10 +293,22 @@ class IOCAnalyzer:
             padding: 20px;
         }
         .analysis-section {
-            background-color: #f5f5f5;
             padding: 15px;
             border-radius: 5px;
             margin-bottom: 20px;
+            border-left: 5px solid;
+        }
+        .analysis-section.high-risk {
+            background-color: rgba(220, 53, 69, 0.1);
+            border-left-color: #dc3545;
+        }
+        .analysis-section.medium-risk {
+            background-color: rgba(255, 193, 7, 0.1);
+            border-left-color: #ffc107;
+        }
+        .analysis-section.low-risk {
+            background-color: rgba(40, 167, 69, 0.1);
+            border-left-color: #28a745;
         }
         .mitre-section {
             background-color: #e9f7fe;

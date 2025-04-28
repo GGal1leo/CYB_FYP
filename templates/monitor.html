@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- Navigation Buttons -->
+<div class="navigation-buttons">
+    <button id="toTop" class="nav-button">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+    <button id="toBottom" class="nav-button">
+        <i class="fas fa-chevron-down"></i>
+    </button>
+</div>
+
 <!-- Hero Section -->
 <section class="hero-section">
     <div class="container text-center">
@@ -36,6 +46,43 @@
                     <i class="fas fa-chart-line fa-3x mb-3 text-primary"></i>
                     <h3 class="card-title">Threat Intelligence</h3>
                     <p class="card-text">Comprehensive analysis of threats using multiple data sources.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- Recent IOCs Section -->
+    <div class="row mt-4 mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>Recent IOCs
+                    </h3>
+                    <button id="refreshIOCs" class="btn btn-light btn-sm">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="recentIOCsTable">
+                            <thead>
+                                <tr>
+                                    <th>IOC</th>
+                                    <th>Type</th>
+                                    <th>Threat Type</th>
+                                    <th>Malware</th>
+                                    <th>Confidence</th>
+                                    <th>First Seen</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentIOCsBody">
+                                <!-- IOCs will be added here dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -108,6 +155,23 @@
     const connectionStatus = document.getElementById('connectionStatus');
     const analyzeButton = document.getElementById('analyzeButton');
     const loadingSpinner = document.getElementById('loadingSpinner');
+    const refreshIOCsButton = document.getElementById('refreshIOCs');
+    const recentIOCsBody = document.getElementById('recentIOCsBody');
+
+    // Define loading messages globally
+    const loadingMessages = [
+        "Initializing cyber analysis...",
+        "Consulting with the AI overlords...",
+        "Decrypting threat patterns...",
+        "Scanning the dark web...",
+        "Brewing some cyber coffee...",
+        "Calculating threat vectors...",
+        "Consulting the MITRE ATT&CK matrix...",
+        "Analyzing potential impacts...",
+        "Preparing final report...",
+        "Almost there...",
+        "Just a few more bits..."
+    ];
 
     function connectWebSocket() {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -143,8 +207,96 @@
         };
     }
 
-    // Initialize WebSocket connection when the page loads
-    document.addEventListener('DOMContentLoaded', connectWebSocket);
+    // Function to fetch and display recent IOCs
+    async function fetchRecentIOCs() {
+        try {
+            const response = await fetch('/recent_iocs');
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Clear existing table rows
+            recentIOCsBody.innerHTML = '';
+            
+            // Add new rows
+            data.data.forEach(ioc => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${ioc.ioc}</td>
+                    <td><span class="badge bg-info">${ioc.ioc_type}</span></td>
+                    <td>${ioc.threat_type}</td>
+                    <td>${ioc.malware_printable}</td>
+                    <td>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-${getConfidenceColor(ioc.confidence_level)}" 
+                                 role="progressbar" 
+                                 style="width: ${ioc.confidence_level}%"
+                                 aria-valuenow="${ioc.confidence_level}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                                ${ioc.confidence_level}%
+                            </div>
+                        </div>
+                    </td>
+                    <td>${new Date(ioc.first_seen).toLocaleString()}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm analyze-ioc" 
+                                data-ioc="${ioc.ioc}">
+                            <i class="fas fa-search me-1"></i>Analyze
+                        </button>
+                    </td>
+                `;
+                recentIOCsBody.appendChild(row);
+            });
+            
+            // Add click handlers for analyze buttons
+            document.querySelectorAll('.analyze-ioc').forEach(button => {
+                button.addEventListener('click', function() {
+                    const ioc = this.dataset.ioc;
+                    const manualAnalysisSection = document.querySelector('.card-header:contains("Manual IOC Analysis")').closest('.card');
+                    
+                    // Scroll to the manual analysis section
+                    manualAnalysisSection.scrollIntoView({ behavior: 'smooth' });
+                    
+                    // Set the IOC input value
+                    document.getElementById('iocInput').value = ioc;
+                    
+                    // Trigger the analysis
+                    document.getElementById('iocForm').dispatchEvent(new Event('submit'));
+                });
+            });
+            
+        } catch (error) {
+            console.error('Error fetching recent IOCs:', error);
+            recentIOCsBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center text-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Error loading recent IOCs: ${error.message}
+                    </td>
+                </tr>
+            `;
+        }
+    }
+    
+    // Helper function to determine confidence level color
+    function getConfidenceColor(confidence) {
+        if (confidence >= 90) return 'success';
+        if (confidence >= 70) return 'info';
+        if (confidence >= 50) return 'warning';
+        return 'danger';
+    }
+    
+    // Add refresh button click handler
+    refreshIOCsButton.addEventListener('click', fetchRecentIOCs);
+    
+    // Fetch IOCs when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        connectWebSocket();
+        fetchRecentIOCs();
+    });
 
     // Display an article in the live feed
     function displayArticle(data) {
@@ -192,16 +344,17 @@
             const analysisDiv = document.getElementById(`analysis-${articleId.replace(/\s+/g, '-')}`);
             const progressBar = analysisDiv.querySelector('.progress-bar');
             const loadingMessage = analysisDiv.querySelector('.loading-message');
+            let progressInterval;
             
             // Show analysis div and disable button
             analysisDiv.classList.remove('d-none');
             this.disabled = true;
-            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
+            this.innerHTML = '<i class="fas fa-spin fa-spinner me-2"></i>Analyzing...';
             
             try {
                 // Start progress simulation
                 let progress = 0;
-                const progressInterval = setInterval(() => {
+                progressInterval = setInterval(() => {
                     progress += 5;
                     if (progress <= 100) {
                         progressBar.style.width = `${progress}%`;
@@ -228,42 +381,54 @@
                     })
                 });
                 
-                const data = await response.json();
-                if (data.error) {
-                    analysisDiv.innerHTML = `
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-circle me-2"></i>${data.error}
-                        </div>
-                    `;
-                } else {
-                    analysisDiv.innerHTML = data.html;
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                
+                const data = await response.json();
+                
+                // Clear the interval and update the UI
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+                
+                // Create a new div for the analysis results
+                const resultsDiv = document.createElement('div');
+                resultsDiv.className = 'analysis-results mt-3';
+                resultsDiv.innerHTML = data.html;
+                
+                // Replace the loading elements with the results
+                analysisDiv.querySelector('.spinner-border').remove();
+                analysisDiv.querySelector('.progress').remove();
+                analysisDiv.querySelector('.loading-messages').remove();
+                analysisDiv.appendChild(resultsDiv);
+                
+                // Re-enable the button
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-search me-2"></i>Analyze';
+                
             } catch (error) {
-                analysisDiv.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-circle me-2"></i>Error analyzing article: ${error.message}
-                    </div>
-                `;
-            } finally {
+                // Clear the interval and show error
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                }
+                
+                // Show error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger mt-3';
+                errorDiv.textContent = `Error analyzing article: ${error.message}`;
+                
+                // Replace the loading elements with the error
+                analysisDiv.querySelector('.spinner-border').remove();
+                analysisDiv.querySelector('.progress').remove();
+                analysisDiv.querySelector('.loading-messages').remove();
+                analysisDiv.appendChild(errorDiv);
+                
+                // Re-enable the button
                 this.disabled = false;
                 this.innerHTML = '<i class="fas fa-search me-2"></i>Analyze';
             }
         });
     }
-
-    const loadingMessages = [
-        "Initializing cyber analysis...",
-        "Consulting with the AI overlords...",
-        "Decrypting threat patterns...",
-        "Scanning the dark web...",
-        "Brewing some cyber coffee...",
-        "Calculating threat vectors...",
-        "Consulting the MITRE ATT&CK matrix...",
-        "Analyzing potential impacts...",
-        "Preparing final report...",
-        "Almost there...",
-        "Just a few more bits..."
-    ];
 
     function updateLoadingProgress(progress) {
         const progressBar = document.getElementById('progressBar');
@@ -322,11 +487,11 @@
                 
                 const data = await response.json();
                 if (data.error) {
-                    iocResults.innerHTML = `
+                iocResults.innerHTML = `
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-circle me-2"></i>${data.error}
-                        </div>
-                    `;
+                    </div>
+                `;
                 } else {
                     iocResults.innerHTML = data.html;
                 }
@@ -343,6 +508,51 @@
                 analyzeButton.innerHTML = '<i class="fas fa-search me-2"></i>Analyze';
             }
         }
+    });
+
+    // Navigation buttons functionality
+    const toTopButton = document.getElementById('toTop');
+    const toBottomButton = document.getElementById('toBottom');
+    
+    function updateButtonVisibility() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrollHeight = document.documentElement.scrollHeight;
+        const clientHeight = document.documentElement.clientHeight;
+        
+        // Show/hide top button based on scroll position
+        if (scrollTop > 100) {
+            toTopButton.classList.add('visible');
+        } else {
+            toTopButton.classList.remove('visible');
+        }
+        
+        // Show/hide bottom button based on scroll position
+        if (scrollTop + clientHeight < scrollHeight - 100) {
+            toBottomButton.classList.add('visible');
+        } else {
+            toBottomButton.classList.remove('visible');
+        }
+    }
+    
+    // Update button visibility on scroll
+    window.addEventListener('scroll', updateButtonVisibility);
+    
+    // Initial check
+    updateButtonVisibility();
+    
+    // Navigation button click handlers
+    toTopButton.addEventListener('click', () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+    
+    toBottomButton.addEventListener('click', () => {
+        window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: 'smooth'
+        });
     });
 </script>
 
@@ -367,6 +577,164 @@
     .progress-bar {
         background-color: #0d6efd;
         transition: width 0.5s ease-in-out;
+    }
+    
+    .back-to-top {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .back-to-top:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .analysis-container {
+        margin-top: 20px;
+    }
+    
+    .analysis-section {
+        margin-bottom: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 5px solid;
+    }
+    
+    .analysis-section.high-risk {
+        background-color: rgba(220, 53, 69, 0.1);
+        border-left-color: #dc3545;
+    }
+    
+    .analysis-section.medium-risk {
+        background-color: rgba(255, 193, 7, 0.1);
+        border-left-color: #ffc107;
+    }
+    
+    .analysis-section.low-risk {
+        background-color: rgba(40, 167, 69, 0.1);
+        border-left-color: #28a745;
+    }
+    
+    .risk-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    
+    .risk-indicator.high {
+        background-color: #dc3545;
+    }
+    
+    .risk-indicator.medium {
+        background-color: #ffc107;
+    }
+    
+    .risk-indicator.low {
+        background-color: #28a745;
+    }
+
+    .risk-label {
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    
+    .risk-label.high {
+        color: #dc3545;
+    }
+    
+    .risk-label.medium {
+        color: #ffc107;
+    }
+    
+    .risk-label.low {
+        color: #28a745;
+    }
+
+    .pcap-analysis {
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #f8f9fa;
+    }
+    
+    .pcap-analysis.found {
+        background-color: rgba(220, 53, 69, 0.1);
+        border-left: 3px solid #dc3545;
+    }
+    
+    .pcap-analysis.not-found {
+        background-color: rgba(40, 167, 69, 0.1);
+        border-left: 3px solid #28a745;
+    }
+    
+    .pcap-analysis.error {
+        background-color: rgba(255, 193, 7, 0.1);
+        border-left: 3px solid #ffc107;
+    }
+    
+    .pcap-icon {
+        margin-right: 8px;
+    }
+
+    .navigation-buttons {
+        position: fixed;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        z-index: 1000;
+    }
+    
+    .nav-button {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid #007bff;
+        color: #007bff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        opacity: 0;
+        visibility: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .nav-button.visible {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .nav-button:hover {
+        background: #007bff;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    }
+    
+    .nav-button:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 5px rgba(0, 123, 255, 0.3);
+    }
+    
+    .nav-button i {
+        font-size: 1.2rem;
     }
 </style>
 {% endblock %} 

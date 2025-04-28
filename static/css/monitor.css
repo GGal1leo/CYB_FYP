@@ -1,0 +1,30 @@
+.pcap-analysis {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pcap-analysis.found {
+    background-color: rgba(255, 193, 7, 0.1);
+    border: 1px solid #ffc107;
+}
+
+.pcap-analysis.not-found {
+    background-color: rgba(40, 167, 69, 0.1);
+    border: 1px solid #28a745;
+}
+
+.pcap-icon {
+    font-size: 1.2rem;
+}
+
+.pcap-analysis.found .pcap-icon {
+    color: #ffc107;
+}
+
+.pcap-analysis.not-found .pcap-icon {
+    color: #28a745;
+} 
